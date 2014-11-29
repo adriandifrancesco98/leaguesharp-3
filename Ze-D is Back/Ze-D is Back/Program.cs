@@ -6,6 +6,7 @@
  * Kurisu (ult on dangerous)
  * Pingo(for finding me proper commands whenever i ask :)
  * Andre(for answerin me whenever i ask him a question ^^ :)
+ * xQx assasin target selector
  */
 using System;
 using System.Collections.Generic;
@@ -21,18 +22,22 @@ using Color = System.Drawing.Color;
 
 namespace Zed
 {
-    internal class program
+    class Program
     {
         private const string ChampionName = "Zed";
         private static List<Spell> SpellList = new List<Spell>();
         private static Spell _q, _w, _e, _r;
         private static Orbwalking.Orbwalker _orbwalker;
         private static Menu _config;
+        public static Menu TargetSelectorMenu;
         private static Obj_AI_Hero _player;
         private static SpellSlot _igniteSlot;
         private static Items.Item _tiamat, _hydra, _blade, _bilge, _rand, _lotis, _youmuu;
         private static Vector3 linepos;
         private static Vector3 castpos;
+        private static int clockon;
+        private static int countults;
+        private static int countdanger;
         private static int ticktock;
         private static float hppi;
         private static Vector3 rpos;
@@ -46,173 +51,183 @@ namespace Zed
 
         private static void Game_OnGameLoad(EventArgs args)
         {
-            _player = ObjectManager.Player;
-            if (ObjectManager.Player.BaseSkinName != ChampionName) return;
-            _q = new Spell(SpellSlot.Q, 900f);
-            _w = new Spell(SpellSlot.W, 550f);
-            _e = new Spell(SpellSlot.E, 270f);
-            _r = new Spell(SpellSlot.R, 650f);
-
-            _q.SetSkillshot(0.25f, 50f, 1700f, false, SkillshotType.SkillshotLine);
-
-            _bilge = new Items.Item(3144, 475f);
-            _blade = new Items.Item(3153, 425f);
-            _hydra = new Items.Item(3074, 250f);
-            _tiamat = new Items.Item(3077, 250f);
-            _rand = new Items.Item(3143, 490f);
-            _lotis = new Items.Item(3190, 590f);
-            _youmuu = new Items.Item(3142, 10);
-            _igniteSlot = _player.GetSpellSlot("SummonerDot");
-
-            var enemy = from hero in ObjectManager.Get<Obj_AI_Hero>()
-                        where hero.IsEnemy == true
-                        select hero;
-            // Just menu things test
-            _config = new Menu("Ze-D Is Back", "Ze-D Is Back", true);
-
-            var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
-            SimpleTs.AddToMenu(targetSelectorMenu);
-            _config.AddSubMenu(targetSelectorMenu);
-
-            _config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
-            _orbwalker = new Orbwalking.Orbwalker(_config.SubMenu("Orbwalking"));
-
-            //Combo
-            _config.AddSubMenu(new Menu("Combo", "Combo"));
-            _config.SubMenu("Combo").AddItem(new MenuItem("UseWC", "Use W (also gap close)")).SetValue(true);
-            _config.SubMenu("Combo").AddItem(new MenuItem("UseIgnitecombo", "Use Ignite(rush for it)")).SetValue(true);
-            _config.SubMenu("Combo")
-                .AddItem(new MenuItem("ActiveCombo", "Combo!").SetValue(new KeyBind(32, KeyBindType.Press)));
-            _config.SubMenu("Combo")
-    .AddItem(new MenuItem("TheLine", "The Line Combo").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
-            _config.SubMenu("Combo").AddItem(new MenuItem("RbackC", "R back on combo")).SetValue(false);
-            _config.SubMenu("Combo").AddItem(new MenuItem("RbackL", "R back on Line Combo")).SetValue(false);
-
-            //Harass
-            _config.AddSubMenu(new Menu("Harass", "Harass"));
-            _config.SubMenu("Harass").AddItem(new MenuItem("longhar", "Long Poke (toggle)").SetValue(new KeyBind("U".ToCharArray()[0], KeyBindType.Toggle)));
-            _config.SubMenu("Harass").AddItem(new MenuItem("UseItemsharass", "Use Tiamat/Hydra")).SetValue(true);
-            _config.SubMenu("Harass").AddItem(new MenuItem("UseWH", "Use W")).SetValue(true);
-            _config.SubMenu("Harass")
-                .AddItem(
-                    new MenuItem("ActiveHarass", "Harass!").SetValue(new KeyBind("C".ToCharArray()[0], KeyBindType.Press)));
-
-            //items
-            _config.AddSubMenu(new Menu("items", "items"));
-            _config.SubMenu("items").AddSubMenu(new Menu("Offensive", "Offensive"));
-            _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Youmuu", "Use Youmuu's")).SetValue(true);
-            _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Tiamat", "Use Tiamat")).SetValue(true);
-            _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Hydra", "Use Hydra")).SetValue(true);
-            _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Bilge", "Use Bilge")).SetValue(true);
-            _config.SubMenu("items")
-                .SubMenu("Offensive")
-                .AddItem(new MenuItem("BilgeEnemyhp", "If Enemy Hp <").SetValue(new Slider(85, 1, 100)));
-            _config.SubMenu("items")
-                .SubMenu("Offensive")
-                .AddItem(new MenuItem("Bilgemyhp", "Or your Hp < ").SetValue(new Slider(85, 1, 100)));
-            _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Blade", "Use Blade")).SetValue(true);
-            _config.SubMenu("items")
-                .SubMenu("Offensive")
-                .AddItem(new MenuItem("BladeEnemyhp", "If Enemy Hp <").SetValue(new Slider(85, 1, 100)));
-            _config.SubMenu("items")
-                .SubMenu("Offensive")
-                .AddItem(new MenuItem("Blademyhp", "Or Your  Hp <").SetValue(new Slider(85, 1, 100)));
-            _config.SubMenu("items").AddSubMenu(new Menu("Deffensive", "Deffensive"));
-            _config.SubMenu("items")
-                .SubMenu("Deffensive")
-                .AddItem(new MenuItem("Omen", "Use Randuin Omen"))
-                .SetValue(true);
-            _config.SubMenu("items")
-                .SubMenu("Deffensive")
-                .AddItem(new MenuItem("Omenenemys", "Randuin if enemys>").SetValue(new Slider(2, 1, 5)));
-            _config.SubMenu("items")
-                .SubMenu("Deffensive")
-                .AddItem(new MenuItem("lotis", "Use Iron Solari"))
-                .SetValue(true);
-            _config.SubMenu("items")
-                .SubMenu("Deffensive")
-                .AddItem(new MenuItem("lotisminhp", "Solari if Ally Hp<").SetValue(new Slider(35, 1, 100)));
-
-            //Farm
-            _config.AddSubMenu(new Menu("Farm", "Farm"));
-            _config.SubMenu("Farm").AddSubMenu(new Menu("LaneFarm", "LaneFarm"));
-            _config.SubMenu("Farm")
-                .SubMenu("LaneFarm")
-                .AddItem(new MenuItem("UseItemslane", "Use Hydra/Tiamat"))
-                .SetValue(true);
-            _config.SubMenu("Farm").SubMenu("LaneFarm").AddItem(new MenuItem("UseQL", "Q LaneClear")).SetValue(true);
-            _config.SubMenu("Farm").SubMenu("LaneFarm").AddItem(new MenuItem("UseEL", "E LaneClear")).SetValue(true);
-            _config.SubMenu("Farm")
-                .SubMenu("LaneFarm")
-                .AddItem(new MenuItem("Energylane", "Energy Lane% >").SetValue(new Slider(45, 1, 100)));
-            _config.SubMenu("Farm")
-                .SubMenu("LaneFarm")
-                .AddItem(
-                    new MenuItem("Activelane", "Jungle!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
-
-            _config.SubMenu("Farm").AddSubMenu(new Menu("LastHit", "LastHit"));
-            _config.SubMenu("Farm").SubMenu("LastHit").AddItem(new MenuItem("UseQLH", "Q LastHit")).SetValue(true);
-            _config.SubMenu("Farm").SubMenu("LastHit").AddItem(new MenuItem("UseELH", "E LastHit")).SetValue(true);
-            _config.SubMenu("Farm")
-                .SubMenu("LastHit")
-                .AddItem(new MenuItem("Energylast", "Energy lasthit% >").SetValue(new Slider(85, 1, 100)));
-            _config.SubMenu("Farm")
-                .SubMenu("LastHit")
-                .AddItem(
-                    new MenuItem("ActiveLast", "LastHit!").SetValue(new KeyBind("X".ToCharArray()[0], KeyBindType.Press)));
-
-            _config.SubMenu("Farm").AddSubMenu(new Menu("Jungle", "Jungle"));
-            _config.SubMenu("Farm")
-                .SubMenu("Jungle")
-                .AddItem(new MenuItem("UseItemsjungle", "Use Hydra/Tiamat"))
-                .SetValue(true);
-            _config.SubMenu("Farm").SubMenu("Jungle").AddItem(new MenuItem("UseQJ", "Q Jungle")).SetValue(true);
-            _config.SubMenu("Farm").SubMenu("Jungle").AddItem(new MenuItem("UseWJ", "W Jungle")).SetValue(true);
-            _config.SubMenu("Farm").SubMenu("Jungle").AddItem(new MenuItem("UseEJ", "E Jungle")).SetValue(true);
-            _config.SubMenu("Farm")
-                .SubMenu("Jungle")
-                .AddItem(new MenuItem("Energyjungle", "Energy Jungle% >").SetValue(new Slider(85, 1, 100)));
-            _config.SubMenu("Farm")
-                .SubMenu("Jungle")
-                .AddItem(
-                    new MenuItem("Activejungle", "Jungle!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
-
-            //Misc
-            _config.AddSubMenu(new Menu("Misc", "Misc"));
-            _config.SubMenu("Misc").AddItem(new MenuItem("UseIgnitekill", "Use Ignite KillSteal")).SetValue(true);
-            _config.SubMenu("Misc").AddItem(new MenuItem("UseQM", "Use Q KillSteal")).SetValue(true);
-            _config.SubMenu("Misc").AddItem(new MenuItem("UseEM", "Use E KillSteal")).SetValue(true);
-            _config.SubMenu("Misc").AddItem(new MenuItem("AutoE", "Auto E")).SetValue(true);
-            _config.SubMenu("Misc").AddItem(new MenuItem("rdodge", "R Dodge Dangerous")).SetValue(true);
-            _config.SubMenu("Misc").AddItem(new MenuItem("", ""));
-            foreach (var e in enemy)
+            try
             {
-                SpellDataInst rdata = e.Spellbook.GetSpell(SpellSlot.R);
-                if (DangerDB.DangerousList.Any(spell => spell.Contains(rdata.SData.Name)))
-                    _config.SubMenu("Misc").AddItem(new MenuItem("ds" + e.SkinName, rdata.SData.Name)).SetValue(true);
+                _player = ObjectManager.Player;
+                if (ObjectManager.Player.BaseSkinName != ChampionName) return;
+                _q = new Spell(SpellSlot.Q, 900f);
+                _w = new Spell(SpellSlot.W, 550f);
+                _e = new Spell(SpellSlot.E, 270f);
+                _r = new Spell(SpellSlot.R, 650f);
+
+                _q.SetSkillshot(0.25f, 50f, 1700f, false, SkillshotType.SkillshotLine);
+
+                _bilge = new Items.Item(3144, 475f);
+                _blade = new Items.Item(3153, 425f);
+                _hydra = new Items.Item(3074, 250f);
+                _tiamat = new Items.Item(3077, 250f);
+                _rand = new Items.Item(3143, 490f);
+                _lotis = new Items.Item(3190, 590f);
+                _youmuu = new Items.Item(3142, 10);
+                _igniteSlot = _player.GetSpellSlot("SummonerDot");
+
+                var enemy = from hero in ObjectManager.Get<Obj_AI_Hero>()
+                            where hero.IsEnemy == true
+                            select hero;
+                // Just menu things test
+                _config = new Menu("Ze-D Is Back", "Ze-D Is Back", true);
+
+                TargetSelectorMenu = new Menu("Target Selector", "Target Selector");
+                SimpleTs.AddToMenu(TargetSelectorMenu);
+                _config.AddSubMenu(TargetSelectorMenu);
+
+                _config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
+                _orbwalker = new Orbwalking.Orbwalker(_config.SubMenu("Orbwalking"));
+
+                //Combo
+                _config.AddSubMenu(new Menu("Combo", "Combo"));
+                _config.SubMenu("Combo").AddItem(new MenuItem("UseWC", "Use W (also gap close)")).SetValue(true);
+                _config.SubMenu("Combo").AddItem(new MenuItem("UseRC", "Use R ")).SetValue(false);
+                _config.SubMenu("Combo").AddItem(new MenuItem("UseIgnitecombo", "Use Ignite(rush for it)")).SetValue(true);
+                _config.SubMenu("Combo").AddItem(new MenuItem("ActiveCombo", "Combo!").SetValue(new KeyBind(32, KeyBindType.Press)));
+                _config.SubMenu("Combo")
+                    .AddItem(new MenuItem("TheLine", "The Line Combo").SetValue(new KeyBind("T".ToCharArray()[0], KeyBindType.Press)));
+                _config.SubMenu("Combo").AddItem(new MenuItem("RbackC", "R back on combo")).SetValue(false);
+                _config.SubMenu("Combo").AddItem(new MenuItem("RbackL", "R back on Line Combo")).SetValue(false);
+
+                //Harass
+                _config.AddSubMenu(new Menu("Harass", "Harass"));
+                _config.SubMenu("Harass").AddItem(new MenuItem("longhar", "Long Poke (toggle)").SetValue(new KeyBind("U".ToCharArray()[0], KeyBindType.Toggle)));
+                _config.SubMenu("Harass").AddItem(new MenuItem("UseItemsharass", "Use Tiamat/Hydra")).SetValue(true);
+                _config.SubMenu("Harass").AddItem(new MenuItem("UseWH", "Use W")).SetValue(true);
+                _config.SubMenu("Harass")
+                    .AddItem(
+                        new MenuItem("ActiveHarass", "Harass!").SetValue(new KeyBind("C".ToCharArray()[0], KeyBindType.Press)));
+
+                //items
+                _config.AddSubMenu(new Menu("items", "items"));
+                _config.SubMenu("items").AddSubMenu(new Menu("Offensive", "Offensive"));
+                _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Youmuu", "Use Youmuu's")).SetValue(true);
+                _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Tiamat", "Use Tiamat")).SetValue(true);
+                _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Hydra", "Use Hydra")).SetValue(true);
+                _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Bilge", "Use Bilge")).SetValue(true);
+                _config.SubMenu("items")
+                    .SubMenu("Offensive")
+                    .AddItem(new MenuItem("BilgeEnemyhp", "If Enemy Hp <").SetValue(new Slider(85, 1, 100)));
+                _config.SubMenu("items")
+                    .SubMenu("Offensive")
+                    .AddItem(new MenuItem("Bilgemyhp", "Or your Hp < ").SetValue(new Slider(85, 1, 100)));
+                _config.SubMenu("items").SubMenu("Offensive").AddItem(new MenuItem("Blade", "Use Blade")).SetValue(true);
+                _config.SubMenu("items")
+                    .SubMenu("Offensive")
+                    .AddItem(new MenuItem("BladeEnemyhp", "If Enemy Hp <").SetValue(new Slider(85, 1, 100)));
+                _config.SubMenu("items")
+                    .SubMenu("Offensive")
+                    .AddItem(new MenuItem("Blademyhp", "Or Your  Hp <").SetValue(new Slider(85, 1, 100)));
+                _config.SubMenu("items").AddSubMenu(new Menu("Deffensive", "Deffensive"));
+                _config.SubMenu("items")
+                    .SubMenu("Deffensive")
+                    .AddItem(new MenuItem("Omen", "Use Randuin Omen"))
+                    .SetValue(true);
+                _config.SubMenu("items")
+                    .SubMenu("Deffensive")
+                    .AddItem(new MenuItem("Omenenemys", "Randuin if enemys>").SetValue(new Slider(2, 1, 5)));
+                _config.SubMenu("items")
+                    .SubMenu("Deffensive")
+                    .AddItem(new MenuItem("lotis", "Use Iron Solari"))
+                    .SetValue(true);
+                _config.SubMenu("items")
+                    .SubMenu("Deffensive")
+                    .AddItem(new MenuItem("lotisminhp", "Solari if Ally Hp<").SetValue(new Slider(35, 1, 100)));
+
+                //Farm
+                _config.AddSubMenu(new Menu("Farm", "Farm"));
+                _config.SubMenu("Farm").AddSubMenu(new Menu("LaneFarm", "LaneFarm"));
+                _config.SubMenu("Farm")
+                    .SubMenu("LaneFarm")
+                    .AddItem(new MenuItem("UseItemslane", "Use Hydra/Tiamat"))
+                    .SetValue(true);
+                _config.SubMenu("Farm").SubMenu("LaneFarm").AddItem(new MenuItem("UseQL", "Q LaneClear")).SetValue(true);
+                _config.SubMenu("Farm").SubMenu("LaneFarm").AddItem(new MenuItem("UseEL", "E LaneClear")).SetValue(true);
+                _config.SubMenu("Farm")
+                    .SubMenu("LaneFarm")
+                    .AddItem(new MenuItem("Energylane", "Energy Lane% >").SetValue(new Slider(45, 1, 100)));
+                _config.SubMenu("Farm")
+                    .SubMenu("LaneFarm")
+                    .AddItem(
+                        new MenuItem("Activelane", "Jungle!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
+
+                _config.SubMenu("Farm").AddSubMenu(new Menu("LastHit", "LastHit"));
+                _config.SubMenu("Farm").SubMenu("LastHit").AddItem(new MenuItem("UseQLH", "Q LastHit")).SetValue(true);
+                _config.SubMenu("Farm").SubMenu("LastHit").AddItem(new MenuItem("UseELH", "E LastHit")).SetValue(true);
+                _config.SubMenu("Farm")
+                    .SubMenu("LastHit")
+                    .AddItem(new MenuItem("Energylast", "Energy lasthit% >").SetValue(new Slider(85, 1, 100)));
+                _config.SubMenu("Farm")
+                    .SubMenu("LastHit")
+                    .AddItem(
+                        new MenuItem("ActiveLast", "LastHit!").SetValue(new KeyBind("X".ToCharArray()[0], KeyBindType.Press)));
+
+                _config.SubMenu("Farm").AddSubMenu(new Menu("Jungle", "Jungle"));
+                _config.SubMenu("Farm")
+                    .SubMenu("Jungle")
+                    .AddItem(new MenuItem("UseItemsjungle", "Use Hydra/Tiamat"))
+                    .SetValue(true);
+                _config.SubMenu("Farm").SubMenu("Jungle").AddItem(new MenuItem("UseQJ", "Q Jungle")).SetValue(true);
+                _config.SubMenu("Farm").SubMenu("Jungle").AddItem(new MenuItem("UseWJ", "W Jungle")).SetValue(true);
+                _config.SubMenu("Farm").SubMenu("Jungle").AddItem(new MenuItem("UseEJ", "E Jungle")).SetValue(true);
+                _config.SubMenu("Farm")
+                    .SubMenu("Jungle")
+                    .AddItem(new MenuItem("Energyjungle", "Energy Jungle% >").SetValue(new Slider(85, 1, 100)));
+                _config.SubMenu("Farm")
+                    .SubMenu("Jungle")
+                    .AddItem(
+                        new MenuItem("Activejungle", "Jungle!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
+
+                //Misc
+                _config.AddSubMenu(new Menu("Misc", "Misc"));
+                _config.SubMenu("Misc").AddItem(new MenuItem("UseIgnitekill", "Use Ignite KillSteal")).SetValue(true);
+                _config.SubMenu("Misc").AddItem(new MenuItem("UseQM", "Use Q KillSteal")).SetValue(true);
+                _config.SubMenu("Misc").AddItem(new MenuItem("UseEM", "Use E KillSteal")).SetValue(true);
+                _config.SubMenu("Misc").AddItem(new MenuItem("AutoE", "Auto E")).SetValue(true);
+                _config.SubMenu("Misc").AddItem(new MenuItem("rdodge", "R Dodge Dangerous")).SetValue(true);
+                _config.SubMenu("Misc").AddItem(new MenuItem("", ""));
+                foreach (var e in enemy)
+                {
+                    SpellDataInst rdata = e.Spellbook.GetSpell(SpellSlot.R);
+                    if (DangerDB.DangerousList.Any(spell => spell.Contains(rdata.SData.Name)))
+                        _config.SubMenu("Misc").AddItem(new MenuItem("ds" + e.SkinName, rdata.SData.Name)).SetValue(true);
+                }
+
+
+                //Drawings
+                _config.AddSubMenu(new Menu("Drawings", "Drawings"));
+                _config.SubMenu("Drawings").AddItem(new MenuItem("DrawQ", "Draw Q")).SetValue(true);
+                _config.SubMenu("Drawings").AddItem(new MenuItem("DrawE", "Draw E")).SetValue(true);
+                _config.SubMenu("Drawings").AddItem(new MenuItem("DrawQW", "Draw long harras")).SetValue(true);
+                _config.SubMenu("Drawings").AddItem(new MenuItem("DrawR", "Draw R")).SetValue(true);
+                _config.SubMenu("Drawings").AddItem(new MenuItem("shadowd", "Shadow Position")).SetValue(true);
+                _config.SubMenu("Drawings").AddItem(new MenuItem("damagetest", "Damage Text")).SetValue(true);
+                _config.SubMenu("Drawings").AddItem(new MenuItem("CircleLag", "Lag Free Circles").SetValue(true));
+                _config.SubMenu("Drawings")
+                    .AddItem(new MenuItem("CircleQuality", "Circles Quality").SetValue(new Slider(100, 100, 10)));
+                _config.SubMenu("Drawings")
+                    .AddItem(new MenuItem("CircleThickness", "Circles Thickness").SetValue(new Slider(1, 10, 1)));
+                _config.AddToMainMenu();
+                Game.PrintChat("<font color='#881df2'>Zed by Diabaths & jackisback</font> Loaded.");
+                Game.PrintChat("<font color='#f2881d'>if you wanna help me to pay my internet bills^^ paypal= bulut@live.co.uk</font>");
+
+                new AssassinManager();
+                Drawing.OnDraw += Drawing_OnDraw;
+                Game.OnGameUpdate += Game_OnGameUpdate;
+                Game.OnWndProc += OnWndProc;
+                Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
             }
-
-
-            //Drawings
-            _config.AddSubMenu(new Menu("Drawings", "Drawings"));
-            _config.SubMenu("Drawings").AddItem(new MenuItem("DrawQ", "Draw Q")).SetValue(true);
-            _config.SubMenu("Drawings").AddItem(new MenuItem("DrawE", "Draw E")).SetValue(true);
-            _config.SubMenu("Drawings").AddItem(new MenuItem("DrawQW", "Draw long harras")).SetValue(true);
-            _config.SubMenu("Drawings").AddItem(new MenuItem("DrawR", "Draw R")).SetValue(true);
-            _config.SubMenu("Drawings").AddItem(new MenuItem("shadowd", "Shadow Position")).SetValue(true);
-            _config.SubMenu("Drawings").AddItem(new MenuItem("damagetest", "Damage Text")).SetValue(true);
-            _config.SubMenu("Drawings").AddItem(new MenuItem("CircleLag", "Lag Free Circles").SetValue(true));
-            _config.SubMenu("Drawings")
-                .AddItem(new MenuItem("CircleQuality", "Circles Quality").SetValue(new Slider(100, 100, 10)));
-            _config.SubMenu("Drawings")
-                .AddItem(new MenuItem("CircleThickness", "Circles Thickness").SetValue(new Slider(1, 10, 1)));
-            _config.AddToMainMenu();
-            Game.PrintChat("<font color='#881df2'>Zed by Diabaths & jackisback</font> Loaded.");
-            Game.PrintChat("<font color='#f2881d'>if you wanna help me to pay my internet bills^^ paypal= bulut@live.co.uk</font>");
-            Drawing.OnDraw += Drawing_OnDraw;
-            Game.OnGameUpdate += Game_OnGameUpdate;
-            Game.OnWndProc += OnWndProc;
-            Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Game.PrintChat("Error something went wrong");
+            }
 
 
 
@@ -228,13 +243,29 @@ namespace Zed
         }
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs castedSpell)
         {
-            if (_config.Item("rdodge").GetValue<bool>() && _config.Item("ds" + unit.SkinName).GetValue<bool>())
-
-            if (DangerDB.DangerousList.Any(spell => spell.Contains(castedSpell.SData.Name)) && 
-                    (unit.Distance(_player) < 650f || _player.Distance(castedSpell.End) <= 250f) && _r.IsReady())
-                    _r.Cast(unit);
-
-    
+            if (unit.Type != GameObjectType.obj_AI_Hero)
+                return;
+            if (unit.IsEnemy)
+            {
+                if (_config.Item("rdodge").GetValue<bool>() && _r.IsReady() && UltStage == UltCastStage.First &&
+                _config.Item("ds" + unit.SkinName).GetValue<bool>())
+                {
+                    if (DangerDB.DangerousList.Any(spell => spell.Contains(castedSpell.SData.Name)) && 
+                        (unit.Distance(_player) < 650f || _player.Distance(castedSpell.End) <= 250f))
+                    {
+                        if (castedSpell.SData.Name == "SyndraR")
+                        {
+                            clockon = Environment.TickCount + 150;
+                            countdanger = countdanger + 1;
+                        }
+                        else
+                        {
+                            _r.Cast(unit);
+                        }
+                    }
+                }
+            }
+ 
             if (unit.IsMe && castedSpell.SData.Name == "zedult")
             {
                 ticktock = Environment.TickCount + 200;
@@ -245,16 +276,17 @@ namespace Zed
         private static void Game_OnGameUpdate(EventArgs args)
         {
             if (_config.Item("ActiveCombo").GetValue<KeyBind>().Active)
-            {
-                Combo();
+            {          
+                Combo(GetEnemy);
+                
             }
             if (_config.Item("TheLine").GetValue<KeyBind>().Active)
             {
-                TheLine();
+                TheLine(GetEnemy);
             }
             if (_config.Item("ActiveHarass").GetValue<KeyBind>().Active)
             {
-                Harass();
+                Harass(GetEnemy);
 
             }
             if (_config.Item("Activelane").GetValue<KeyBind>().Active)
@@ -271,12 +303,14 @@ namespace Zed
             }
             if (_config.Item("AutoE").GetValue<bool>())
             {
-                if (ObjectManager.Get<Obj_AI_Hero>().Count(hero =>
-                    hero.IsValidTarget() && (hero.Distance(ObjectManager.Player.ServerPosition) <= _e.Range ||
-                                             (WShadow != null && hero.Distance(WShadow.ServerPosition) <= _e.Range))) > 0)
-                    _e.Cast();
+                CastE();
             }
 
+            if (Environment.TickCount >= clockon && countdanger > countults)
+            {
+                _r.Cast(GetEnemy);
+                countults = countults + 1;
+            }
             if (Environment.TickCount <= ticktock)
             {
                 foreach (var enemy in
@@ -300,7 +334,6 @@ namespace Zed
 
 
             _player = ObjectManager.Player;
-            _orbwalker.SetAttack(true);
 
 
             KillSteal();
@@ -329,51 +362,52 @@ namespace Zed
                 damage += _player.GetSpellDamage(enemy, SpellSlot.E);
             if (_r.IsReady())
                 damage += _player.GetSpellDamage(enemy, SpellSlot.R);
-            damage += (_r.Level * 0.15 + 0.05) * (damage - ObjectManager.Player.GetSummonerSpellDamage(enemy, Damage.SummonerSpell.Ignite));
+            damage += (_r.Level*0.15 + 0.05)*
+                      (damage - ObjectManager.Player.GetSummonerSpellDamage(enemy, Damage.SummonerSpell.Ignite));
 
             return (float)damage;
         }
 
-        private static void Combo()
+        private static void Combo(Obj_AI_Hero t)
         {
-            var target = SimpleTs.GetTarget(2000, SimpleTs.DamageType.Physical);
+            var target = t;
+
+
             if (target != null && _config.Item("UseIgnitecombo").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
-                _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+                    _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
             {
-                if (ComboDamage(target) > target.Health)
-                {
-                    _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
-                }
+                 if (ComboDamage(target) > target.Health)
+                 {
+                     _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
+                 }
             }
-            if (target != null && ShadowStage == ShadowCastStage.First && _config.Item("UseWC").GetValue<bool>() && target.Distance(_player.Position) > 400 && target.Distance(_player.Position) < 1300)
+            if (target != null && ShadowStage == ShadowCastStage.First && _config.Item("UseWC").GetValue<bool>() &&
+                    target.Distance(_player.Position) > 400 && target.Distance(_player.Position) < 1300)
             {
                 CastW(target);
-                _w.Cast();
             }
-            if (target != null && ShadowStage == ShadowCastStage.Second && _config.Item("UseWC").GetValue<bool>() && target.Distance(WShadow.ServerPosition) < target.Distance(_player.Position))
+            if (target != null && ShadowStage == ShadowCastStage.Second && _config.Item("UseWC").GetValue<bool>() &&
+                target.Distance(WShadow.ServerPosition) < target.Distance(_player.Position))
             {
-                _w.Cast();
+               _w.Cast();
             }
 
-            if (target != null && !_r.IsReady() && _config.Item("UseWC").GetValue<bool>())
-            {
-                Harass();
-            }
-            if (target != null && target.HasBuff("zedulttargetmark", true) && _config.Item("RbackC").GetValue<bool>() && 
-                 UltStage == UltCastStage.Second && target.Health <
-               (hppi * (_r.Level * 0.15 + 0.05)  - 3 * ((ObjectManager.Player.Level - 1) * 4 + 14)))
+            if (target != null && target.HasBuff("zedulttargetmark", true) && _config.Item("RbackC").GetValue<bool>() &&
+                UltStage == UltCastStage.Second &&
+                target.Health < (hppi * (_r.Level * 0.15 + 0.05) - 3 * ((ObjectManager.Player.Level - 1) * 4 + 14)))
             {
                 _r.Cast();
             }
 
             UseItemes(target);
-            _q.Cast(target.Position);
+            CastQ(target);
             CastE();
+            
         }
 
-        private static void TheLine()
+        private static void TheLine(Obj_AI_Hero t)
         {
-            var target = SimpleTs.GetTarget(_r.Range, SimpleTs.DamageType.Physical);
+            var target = t;
 
             if (target == null)
             {
@@ -436,16 +470,12 @@ namespace Zed
 
         }
 
-        private static void Harass()
+        private static void Harass(Obj_AI_Hero t)
         {
-            var target = SimpleTs.GetTarget(2000, SimpleTs.DamageType.Physical);
+            var target = t;
+
             var useItemsH = _config.Item("UseItemsharass").GetValue<bool>();
-            if (target.IsValidTarget() && !(_config.Item("UseWH").GetValue<bool>()) && _q.IsReady() &&
-                           target.Distance(_player.Position) < 900 )
-            {
-                CastQ(target);
-                
-            }
+
             if (target.IsValidTarget() && _config.Item("longhar").GetValue<KeyBind>().Active && _w.IsReady() && _q.IsReady() && ObjectManager.Player.Mana >
                 ObjectManager.Player.Spellbook.GetSpell(SpellSlot.Q).ManaCost +
                 ObjectManager.Player.Spellbook.GetSpell(SpellSlot.W).ManaCost && target.Distance(_player.Position) > 850 &&
@@ -455,27 +485,22 @@ namespace Zed
                 CastQ(target);
             }
 
-            if (target.IsValidTarget() && !_w.IsReady() && _q.IsReady() &&
-                           (target.Distance(_player.Position) < 900 || target.Distance(WShadow.ServerPosition) < 900))
+            if (target.IsValidTarget() && (ShadowStage != ShadowCastStage.First || !(_config.Item("UseWH").GetValue<bool>())) && _q.IsReady() &&
+                           (target.Distance(_player.Position) <= 900 || target.Distance(WShadow.ServerPosition) <= 900))
             {
                 CastQ(target);
             }
-            else
-            {
-                if (target.IsValidTarget() && _w.IsReady() && _q.IsReady() && _config.Item("UseWH").GetValue<bool>() &&
+
+            if (target.IsValidTarget() && _w.IsReady() && _q.IsReady() && _config.Item("UseWH").GetValue<bool>() &&
                 ObjectManager.Player.Mana >
                 ObjectManager.Player.Spellbook.GetSpell(SpellSlot.Q).ManaCost +
                 ObjectManager.Player.Spellbook.GetSpell(SpellSlot.W).ManaCost && target.Distance(_player.Position) < 850)
-                {
-                    CastW(target);
-
-                    if (target.IsValidTarget() && WShadow != null && target.Distance(WShadow.ServerPosition) < 900)
-
-                        CastQ(target);
-                }
+            {
+                CastW(target);
             }
-
-
+            
+            CastE();
+         
             if (useItemsH && _tiamat.IsReady() && target.Distance(_player.Position) < _tiamat.Range)
             {
                 _tiamat.Cast();
@@ -484,17 +509,15 @@ namespace Zed
             {
                 _hydra.Cast();
             }
-            CastE();
-
+            
         }
 
         private static void Laneclear()
         {
-            var allMinionsQ = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, _q.Range, MinionTypes.All);
-            var allMinionsE = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, _e.Range,
-                MinionTypes.All);
-            var mymana = (_player.Mana >=
-                          (_player.MaxMana * _config.Item("Energylane").GetValue<Slider>().Value) / 100);
+            var allMinionsQ = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, _q.Range);
+            var allMinionsE = MinionManager.GetMinions(ObjectManager.Player.ServerPosition, _e.Range);
+            var mymana = (_player.Mana >= (_player.MaxMana*_config.Item("Energylane").GetValue<Slider>().Value)/100);
+
             var useItemsl = _config.Item("UseItemslane").GetValue<bool>();
             var useQl = _config.Item("UseQL").GetValue<bool>();
             var useEl = _config.Item("UseEL").GetValue<bool>();
@@ -595,6 +618,36 @@ namespace Zed
                 {
                     _hydra.Cast();
                 }
+            }
+
+        }
+        static Obj_AI_Hero GetEnemy
+        {
+            get
+            {
+                var assassinRange = TargetSelectorMenu.Item("AssassinSearchRange").GetValue<Slider>().Value;
+
+                var vEnemy = ObjectManager.Get<Obj_AI_Hero>()
+                    .Where(
+                        enemy =>
+                            enemy.Team != ObjectManager.Player.Team && !enemy.IsDead && enemy.IsVisible &&
+                            TargetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null &&
+                            TargetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>() &&
+                            ObjectManager.Player.Distance(enemy) < assassinRange);
+
+                if (TargetSelectorMenu.Item("AssassinSelectOption").GetValue<StringList>().SelectedIndex == 1)
+                {
+                    vEnemy = (from vEn in vEnemy select vEn).OrderByDescending(vEn => vEn.MaxHealth);
+                }
+
+                Obj_AI_Hero[] objAiHeroes = vEnemy as Obj_AI_Hero[] ?? vEnemy.ToArray();
+
+                Obj_AI_Hero t = !objAiHeroes.Any()
+                    ? SimpleTs.GetTarget(650, SimpleTs.DamageType.Magical)
+                    : objAiHeroes[0];
+
+                return t;
+
             }
 
         }
@@ -710,10 +763,10 @@ namespace Zed
 
         private static void CastW(Obj_AI_Base target)
         {
-            if (delayw >= Environment.TickCount - shadowdelay)
+            if (delayw >= Environment.TickCount - shadowdelay || ShadowStage != ShadowCastStage.First || 
+                ( target.HasBuff("zedulttargetmark", true) && LastCastedSpell.LastCastPacketSent.Slot == SpellSlot.R && UltStage == UltCastStage.Cooldown))
                 return;
-            if (ShadowStage != ShadowCastStage.First)
-                return;
+         
             _w.Cast(target.Position, true);
             shadowdelay = Environment.TickCount;
 
@@ -722,22 +775,26 @@ namespace Zed
         private static void CastQ(Obj_AI_Base target)
         {
             if (!_q.IsReady()) return;
-            _q.UpdateSourcePosition(ObjectManager.Player.ServerPosition, ObjectManager.Player.ServerPosition);
-
-            if (WShadow != null)
+            if (WShadow != null && target.Distance(WShadow.ServerPosition) <= 900)
             {
+                
                 _q.UpdateSourcePosition(WShadow.ServerPosition, WShadow.ServerPosition);
-                _q.Cast(target, false, true);
-                _q.UpdateSourcePosition(ObjectManager.Player.ServerPosition, ObjectManager.Player.ServerPosition);
-                _q.Cast(target, false, true);
+                _q.Cast(target);
+              
             }
-            else if (_q.WillHit(target, target.ServerPosition))
+            else
+            {
+                _q.UpdateSourcePosition(ObjectManager.Player.ServerPosition, ObjectManager.Player.ServerPosition);
+                _q.Cast(target);
+               
 
-                _q.Cast(target, false, true);
+            }
+                
 
         }
         private static void CastE()
         {
+            if (!_e.IsReady()) return;
             if (ObjectManager.Get<Obj_AI_Hero>()
                 .Count(
                     hero =>
@@ -813,11 +870,11 @@ namespace Zed
                 {
                     if (ShadowStage == ShadowCastStage.Cooldown)
                     {
-                        Utility.DrawCircle(WShadow.ServerPosition, WShadow.BoundingRadius * 2, Color.Red);
+                        Utility.DrawCircle(WShadow.ServerPosition, WShadow.BoundingRadius * 1.5f, Color.Red);
                     }
                     else if (WShadow != null && ShadowStage == ShadowCastStage.Second)
                     {
-                        Utility.DrawCircle(WShadow.ServerPosition, WShadow.BoundingRadius * 2, Color.Yellow);
+                        Utility.DrawCircle(WShadow.ServerPosition, WShadow.BoundingRadius * 1.5f, Color.Yellow);
                     }
                 }
             }
