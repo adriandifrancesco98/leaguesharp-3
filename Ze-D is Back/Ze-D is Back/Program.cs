@@ -87,7 +87,6 @@ namespace Zed
                 //Combo
                 _config.AddSubMenu(new Menu("Combo", "Combo"));
                 _config.SubMenu("Combo").AddItem(new MenuItem("UseWC", "Use W (also gap close)")).SetValue(true);
-                _config.SubMenu("Combo").AddItem(new MenuItem("UseRC", "Use R ")).SetValue(false);
                 _config.SubMenu("Combo").AddItem(new MenuItem("UseIgnitecombo", "Use Ignite(rush for it)")).SetValue(true);
                 _config.SubMenu("Combo").AddItem(new MenuItem("ActiveCombo", "Combo!").SetValue(new KeyBind(32, KeyBindType.Press)));
                 _config.SubMenu("Combo")
