@@ -417,7 +417,7 @@ namespace Zed
                 _player.IssueOrder(GameObjectOrder.AttackUnit, target);
             }
 
-            if ((linepos.X == 0 && linepos.Y == 0) || !_r.IsReady())
+            if ((linepos.X == 0 && linepos.Y == 0) || !_r.IsReady()|| target.Distance(_player.Position) >= 640)
             {
                 return;
             }
