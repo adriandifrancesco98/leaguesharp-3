@@ -154,7 +154,7 @@ namespace Zed
                 _config.SubMenu("Farm")
                     .SubMenu("LaneFarm")
                     .AddItem(
-                        new MenuItem("Activelane", "Jungle!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
+                        new MenuItem("Activelane", "Lane clear!").SetValue(new KeyBind("V".ToCharArray()[0], KeyBindType.Press)));
 
                 _config.SubMenu("Farm").AddSubMenu(new Menu("LastHit", "LastHit"));
                 _config.SubMenu("Farm").SubMenu("LastHit").AddItem(new MenuItem("UseQLH", "Q LastHit")).SetValue(true);
