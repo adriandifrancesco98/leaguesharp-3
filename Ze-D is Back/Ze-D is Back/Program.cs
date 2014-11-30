@@ -647,7 +647,7 @@ namespace Zed
                 Obj_AI_Hero[] objAiHeroes = vEnemy as Obj_AI_Hero[] ?? vEnemy.ToArray();
 
                 Obj_AI_Hero t = !objAiHeroes.Any()
-                    ? SimpleTs.GetTarget(650, SimpleTs.DamageType.Magical)
+                    ? SimpleTs.GetTarget(1400, SimpleTs.DamageType.Magical)
                     : objAiHeroes[0];
 
                 return t;
