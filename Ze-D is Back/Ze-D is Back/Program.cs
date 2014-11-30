@@ -417,7 +417,7 @@ namespace Zed
                 _player.IssueOrder(GameObjectOrder.AttackUnit, target);
             }
 
-            if ((linepos.X == 0 && linepos.Y == 0) || !_r.IsReady()|| target.Distance(_player.Position) >= 640)
+            if ((linepos.X == 0 && linepos.Y == 0) || !_r.IsReady() || target.Distance(_player.Position) >= 640)
             {
                 return;
             }
@@ -446,26 +446,31 @@ namespace Zed
                     castpos.Z = target.ServerPosition.Z;
 
                     _w.Cast(castpos, false);
+                    CastE();
+                    UseItemes(target);
+                    _q.Cast(target.Position);
+                    
+                    
+                    if (target != null && _config.Item("UseIgnitecombo").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
+                            _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+                    {
+                        _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
+                    }
                 }
             }
-            if (target != null && _config.Item("UseIgnitecombo").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
-                _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+
+            if (target != null && WShadow != null && UltStage == UltCastStage.Second && target.Distance(_player.Position) > 250 && (target.Distance(WShadow.ServerPosition) < target.Distance(_player.Position)))
             {
-                _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
+                _w.Cast();
             }
 
-            _q.Cast(target.Position);
-            CastE();
 
             if (target != null && target.HasBuff("zedulttargetmark", true) && _config.Item("RbackL").GetValue<bool>() && target.Health <
               (hppi * (_r.Level * 0.15 + 0.05) + 50 + 3*((ObjectManager.Player.Level-1)*4+14)))
             {
                 _r.Cast();
             }
-            if (target != null && WShadow != null && UltStage == UltCastStage.Second && target.Distance(_player.Position) > 250 && (target.Distance(WShadow.ServerPosition) < target.Distance(_player.Position)))
-            {
-                _w.Cast();
-            }
+
 
         }
 
