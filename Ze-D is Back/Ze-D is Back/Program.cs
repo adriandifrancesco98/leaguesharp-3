@@ -343,7 +343,7 @@ namespace Zed
         {
             var damage = 0d;
             if (_igniteSlot != SpellSlot.Unknown &&
-                _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+                _player.Spellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
                 damage += ObjectManager.Player.GetSummonerSpellDamage(enemy, Damage.SummonerSpell.Ignite);
             if (Items.HasItem(3077) && Items.CanUseItem(3077))
                 damage += _player.GetItemDamage(enemy, Damage.DamageItems.Tiamat);
@@ -373,11 +373,11 @@ namespace Zed
 
 
             if (target != null && _config.Item("UseIgnitecombo").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
-                    _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+                    _player.Spellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
             {
                  if (ComboDamage(target) > target.Health)
                  {
-                     _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
+                     _player.Spellbook.CastSpell(_igniteSlot, target);
                  }
             }
             if (target != null && ShadowStage == ShadowCastStage.First && _config.Item("UseWC").GetValue<bool>() &&
@@ -452,9 +452,9 @@ namespace Zed
                     
                     
                     if (target != null && _config.Item("UseIgnitecombo").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
-                            _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+                            _player.Spellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
                     {
-                        _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
+                        _player.Spellbook.CastSpell(_igniteSlot, target);
                     }
                 }
             }
@@ -827,11 +827,11 @@ namespace Zed
             var target = SimpleTs.GetTarget(2000, SimpleTs.DamageType.Physical);
             var igniteDmg = _player.GetSummonerSpellDamage(target, Damage.SummonerSpell.Ignite);
             if (target.IsValidTarget() && _config.Item("UseIgnitekill").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
-                _player.SummonerSpellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
+                _player.Spellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
             {
                 if (igniteDmg > target.Health && _player.Distance(target) <= 600)
                 {
-                    _player.SummonerSpellbook.CastSpell(_igniteSlot, target);
+                    _player.Spellbook.CastSpell(_igniteSlot, target);
                 }
             }
             if (target.IsValidTarget() && _q.IsReady() && _config.Item("UseQM").GetValue<bool>() && _q.GetDamage(target) > target.Health)
