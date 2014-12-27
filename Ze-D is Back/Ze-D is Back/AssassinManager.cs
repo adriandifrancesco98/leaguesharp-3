@@ -37,7 +37,7 @@ namespace Zed
                     .SubMenu("AssassinMode")
                     .AddItem(
                         new MenuItem("Assassin" + enemy.BaseSkinName, enemy.BaseSkinName).SetValue(
-                            SimpleTs.GetPriority(enemy) > 3));
+                            TargetSelector.GetPriority(enemy) > 3));
             }
             Program.TargetSelectorMenu.SubMenu("MenuAssassin")
                 .AddItem(new MenuItem("AssassinSearchRange", "Search Range")).SetValue(new Slider(1000, 2000));
@@ -144,13 +144,13 @@ namespace Zed
                         .Where(
                             enemy => Program.TargetSelectorMenu.Item("Assassin" + enemy.BaseSkinName).GetValue<bool>()))
             {
-                if (ObjectManager.Player.Distance(enemy) < drawSearchRange)
+                if (ObjectManager.Player.Distance(enemy.ServerPosition) < drawSearchRange)
                 {
                     if (drawActive.Active)
                         Utility.DrawCircle(enemy.Position, 85f, drawActive.Color);
                 }
-                else if (ObjectManager.Player.Distance(enemy) > drawSearchRange &&
-                         ObjectManager.Player.Distance(enemy) < drawSearchRange + 400) 
+                else if (ObjectManager.Player.Distance(enemy.ServerPosition) > drawSearchRange &&
+                         ObjectManager.Player.Distance(enemy.ServerPosition) < drawSearchRange + 400) 
                 {
                     if (drawNearest.Active)
                         Utility.DrawCircle(enemy.Position, 85f, drawNearest.Color);
