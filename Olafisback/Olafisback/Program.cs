@@ -81,7 +81,7 @@ namespace Olafisback
             Config = new Menu(ChampionName, ChampionName, true);
 
             var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
-            SimpleTs.AddToMenu(targetSelectorMenu);
+            TargetSelector.AddToMenu(targetSelectorMenu);
             Config.AddSubMenu(targetSelectorMenu);
 
             //Orbwalker submenu
@@ -172,19 +172,19 @@ namespace Olafisback
 
         private static void Combo()
         {
-            var target = SimpleTs.GetTarget(Q.Range, SimpleTs.DamageType.Physical);
+            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
 
-            if (target.IsValidTarget() && Config.Item("UseQCombo").GetValue<bool>() && Q.IsReady() && Player.Distance(target) <= Q.Range)
+            if (target.IsValidTarget() && Config.Item("UseQCombo").GetValue<bool>() && Q.IsReady() && Player.Distance(target.ServerPosition) <= Q.Range)
             {
                 PredictionOutput Qpredict = Q.GetPrediction(target);
                 Q.Cast(Qpredict.CastPosition);
             }
             
-            if (target.IsValidTarget() && Config.Item("UseECombo").GetValue<bool>() && E.IsReady() && Player.Distance(target) <= E.Range)
+            if (target.IsValidTarget() && Config.Item("UseECombo").GetValue<bool>() && E.IsReady() && Player.Distance(target.ServerPosition) <= E.Range)
             
                 E.CastOnUnit(target);
-            
-            if (target.IsValidTarget() && Config.Item("UseWCombo").GetValue<bool>() && W.IsReady() && Player.Distance(target) <= 225f)
+
+            if (target.IsValidTarget() && Config.Item("UseWCombo").GetValue<bool>() && W.IsReady() && Player.Distance(target.ServerPosition) <= 225f)
             
                 W.Cast();
             
@@ -193,19 +193,19 @@ namespace Olafisback
                     BKR.Cast(target);
                     
                     BWC.Cast(target);
-                    if (Player.Distance(target) <= HDR.Range)
+                    if (Player.Distance(target.ServerPosition) <= HDR.Range)
                     {
                         HDR.Cast();
                     }
-                    if (Player.Distance(target) <= TMT.Range)
+                    if (Player.Distance(target.ServerPosition) <= TMT.Range)
                     {
                         TMT.Cast();
                     }
-                    if (Player.Distance(target) <= 400)
+                    if (Player.Distance(target.ServerPosition) <= 400)
                     {
                         YOU.Cast();
                     }
-                    if (Player.Distance(target) <= RAO.Range)
+                    if (Player.Distance(target.ServerPosition) <= RAO.Range)
                     {
                         RAO.Cast();
                     }
@@ -215,22 +215,22 @@ namespace Olafisback
         }
         private static void Harass()
         {
-            var target = SimpleTs.GetTarget(Q.Range, SimpleTs.DamageType.Physical);
-            if (target.IsValidTarget() && Q.IsReady() && Config.Item("UseQHarass").GetValue<bool>() && 
-                    Player.Mana / Player.MaxMana * 100 > Config.Item("Minman").GetValue<Slider>().Value && Player.Distance(target) <= Q.Range)
+            var target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Physical);
+            if (target.IsValidTarget() && Q.IsReady() && Config.Item("UseQHarass").GetValue<bool>() &&
+                    Player.Mana / Player.MaxMana * 100 > Config.Item("Minman").GetValue<Slider>().Value && Player.Distance(target.ServerPosition) <= Q.Range)
             {
                 PredictionOutput Qpredict = Q.GetPrediction(target);
                 if (Qpredict.Hitchance >= HitChance.High)
                     Q.Cast(Qpredict.CastPosition);
             }
-            if (target.IsValidTarget() && Q.IsReady() && Config.Item("UseQ2Harass").GetValue<bool>() && 
-                    Player.Mana / Player.MaxMana * 100 > Config.Item("Minman").GetValue<Slider>().Value && Player.Distance(target) <= Q2.Range)
+            if (target.IsValidTarget() && Q.IsReady() && Config.Item("UseQ2Harass").GetValue<bool>() &&
+                    Player.Mana / Player.MaxMana * 100 > Config.Item("Minman").GetValue<Slider>().Value && Player.Distance(target.ServerPosition) <= Q2.Range)
             {
                 PredictionOutput Q2predict = Q2.GetPrediction(target);
                 if (Q2predict.Hitchance >= HitChance.High)
                     Q2.Cast(Q2predict.CastPosition);
             }
-            if (E.IsReady() && Config.Item("UseEHarass").GetValue<bool>() && Player.Distance(target) <= E.Range)
+            if (E.IsReady() && Config.Item("UseEHarass").GetValue<bool>() && Player.Distance(target.ServerPosition) <= E.Range)
                 E.CastOnUnit(target);
         }
        
