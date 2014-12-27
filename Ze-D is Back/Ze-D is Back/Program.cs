@@ -78,7 +78,7 @@ namespace Zed
                 _config = new Menu("Ze-D Is Back", "Ze-D Is Back", true);
 
                 TargetSelectorMenu = new Menu("Target Selector", "Target Selector");
-                SimpleTs.AddToMenu(TargetSelectorMenu);
+                TargetSelector.AddToMenu(TargetSelectorMenu);
                 _config.AddSubMenu(TargetSelectorMenu);
 
                 _config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
@@ -250,7 +250,7 @@ namespace Zed
                 _config.Item("ds" + unit.SkinName).GetValue<bool>())
                 {
                     if (DangerDB.DangerousList.Any(spell => spell.Contains(castedSpell.SData.Name)) && 
-                        (unit.Distance(_player) < 650f || _player.Distance(castedSpell.End) <= 250f))
+                        (unit.Distance(_player.ServerPosition) < 650f || _player.Distance(castedSpell.End) <= 250f))
                     {
                         if (castedSpell.SData.Name == "SyndraR")
                         {
@@ -572,13 +572,13 @@ namespace Zed
             var useE = _config.Item("UseELH").GetValue<bool>();
             foreach (var minion in allMinions)
             {
-                if (mymana && useQ && _q.IsReady() && _player.Distance(minion) < _q.Range &&
+                if (mymana && useQ && _q.IsReady() && _player.Distance(minion.ServerPosition) < _q.Range &&
                     minion.Health < 0.75 * _player.GetSpellDamage(minion, SpellSlot.Q))
                 {
                     _q.Cast(minion);
                 }
 
-                if (mymana && _e.IsReady() && useE && _player.Distance(minion) < _e.Range &&
+                if (mymana && _e.IsReady() && useE && _player.Distance(minion.ServerPosition) < _e.Range &&
                     minion.Health < 0.95 * _player.GetSpellDamage(minion, SpellSlot.E))
                 {
                     _e.Cast();
@@ -601,24 +601,24 @@ namespace Zed
             if (mobs.Count > 0)
             {
                 var mob = mobs[0];
-                if (mymana && _w.IsReady() && useW && _player.Distance(mob) < _q.Range)
+                if (mymana && _w.IsReady() && useW && _player.Distance(mob.ServerPosition) < _q.Range)
                 {
                     _w.Cast(mob.Position);
                 }
-                if (mymana && useQ && _q.IsReady() && _player.Distance(mob) < _q.Range)
+                if (mymana && useQ && _q.IsReady() && _player.Distance(mob.ServerPosition) < _q.Range)
                 {
                     CastQ(mob);
                 }
-                if (mymana && _e.IsReady() && useE && _player.Distance(mob) < _e.Range)
+                if (mymana && _e.IsReady() && useE && _player.Distance(mob.ServerPosition) < _e.Range)
                 {
                     _e.Cast();
                 }
 
-                if (useItemsJ && _tiamat.IsReady() && _player.Distance(mob) < _tiamat.Range)
+                if (useItemsJ && _tiamat.IsReady() && _player.Distance(mob.ServerPosition) < _tiamat.Range)
                 {
                     _tiamat.Cast();
                 }
-                if (useItemsJ && _hydra.IsReady() && _player.Distance(mob) < _hydra.Range)
+                if (useItemsJ && _hydra.IsReady() && _player.Distance(mob.ServerPosition) < _hydra.Range)
                 {
                     _hydra.Cast();
                 }
@@ -637,7 +637,7 @@ namespace Zed
                             enemy.Team != ObjectManager.Player.Team && !enemy.IsDead && enemy.IsVisible &&
                             TargetSelectorMenu.Item("Assassin" + enemy.ChampionName) != null &&
                             TargetSelectorMenu.Item("Assassin" + enemy.ChampionName).GetValue<bool>() &&
-                            ObjectManager.Player.Distance(enemy) < assassinRange);
+                            ObjectManager.Player.Distance(enemy.ServerPosition) < assassinRange);
 
                 if (TargetSelectorMenu.Item("AssassinSelectOption").GetValue<StringList>().SelectedIndex == 1)
                 {
@@ -647,7 +647,7 @@ namespace Zed
                 Obj_AI_Hero[] objAiHeroes = vEnemy as Obj_AI_Hero[] ?? vEnemy.ToArray();
 
                 Obj_AI_Hero t = !objAiHeroes.Any()
-                    ? SimpleTs.GetTarget(1400, SimpleTs.DamageType.Magical)
+                    ? TargetSelector.GetTarget(1400, TargetSelector.DamageType.Magical)
                     : objAiHeroes[0];
 
                 return t;
@@ -680,12 +680,12 @@ namespace Zed
             //var imp = _config.Item("Mppotion").GetValue<bool>();
             //var impuse = _player.Health <= (_player.MaxHealth * (_config.Item("Mppotionuse").GetValue<Slider>().Value) / 100);
 
-            if (_player.Distance(target) <= 450 && iBilge && (iBilgeEnemyhp || iBilgemyhp) && _bilge.IsReady())
+            if (_player.Distance(target.ServerPosition) <= 450 && iBilge && (iBilgeEnemyhp || iBilgemyhp) && _bilge.IsReady())
             {
                 _bilge.Cast(target);
 
             }
-            if (_player.Distance(target) <= 450 && iBlade && (iBladeEnemyhp || iBlademyhp) && _blade.IsReady())
+            if (_player.Distance(target.ServerPosition) <= 450 && iBlade && (iBladeEnemyhp || iBlademyhp) && _blade.IsReady())
             {
                 _blade.Cast(target);
 
@@ -714,7 +714,7 @@ namespace Zed
                         _lotis.Cast();
                 }
             }
-            if (_player.Distance(target) <= 350 && iYoumuu && _youmuu.IsReady())
+            if (_player.Distance(target.ServerPosition) <= 350 && iYoumuu && _youmuu.IsReady())
             {
                 _youmuu.Cast();
 
@@ -824,23 +824,23 @@ namespace Zed
 
         private static void KillSteal()
         {
-            var target = SimpleTs.GetTarget(2000, SimpleTs.DamageType.Physical);
+            var target = TargetSelector.GetTarget(2000, TargetSelector.DamageType.Physical);
             var igniteDmg = _player.GetSummonerSpellDamage(target, Damage.SummonerSpell.Ignite);
             if (target.IsValidTarget() && _config.Item("UseIgnitekill").GetValue<bool>() && _igniteSlot != SpellSlot.Unknown &&
                 _player.Spellbook.CanUseSpell(_igniteSlot) == SpellState.Ready)
             {
-                if (igniteDmg > target.Health && _player.Distance(target) <= 600)
+                if (igniteDmg > target.Health && _player.Distance(target.ServerPosition) <= 600)
                 {
                     _player.Spellbook.CastSpell(_igniteSlot, target);
                 }
             }
             if (target.IsValidTarget() && _q.IsReady() && _config.Item("UseQM").GetValue<bool>() && _q.GetDamage(target) > target.Health)
             {
-                if (_player.Distance(target) <= _q.Range)
+                if (_player.Distance(target.ServerPosition) <= _q.Range)
                 {
                     _q.Cast(target);
                 }
-                else if (WShadow != null && WShadow.Distance(target) <= _q.Range)
+                else if (WShadow != null && WShadow.Distance(target.ServerPosition) <= _q.Range)
                 {
                     _q.UpdateSourcePosition(WShadow.ServerPosition, WShadow.ServerPosition);
                     _q.Cast(target);
@@ -848,8 +848,8 @@ namespace Zed
             }
             if (_e.IsReady() && _config.Item("UseEM").GetValue<bool>())
             {
-                var t = SimpleTs.GetTarget(_e.Range, SimpleTs.DamageType.Physical);
-                if (_e.GetDamage(t) > t.Health && (_player.Distance(t) <= _e.Range || WShadow.Distance(t) <= _e.Range))
+                var t = TargetSelector.GetTarget(_e.Range, TargetSelector.DamageType.Physical);
+                if (_e.GetDamage(t) > t.Health && (_player.Distance(t.ServerPosition) <= _e.Range || WShadow.Distance(t.ServerPosition) <= _e.Range))
                 {
                     _e.Cast();
                 }
