@@ -60,7 +60,7 @@ namespace Olafisback
             W = new Spell(SpellSlot.W);
             E = new Spell(SpellSlot.E, 325);
 
-            Q.SetSkillshot(0.25f, 75f, 1600f, false, SkillshotType.SkillshotLine);
+            Q.SetSkillshot(0.25f, 75f, 1500f, false, SkillshotType.SkillshotLine);
             Q2.SetSkillshot(0.25f, 75f, 1600f, false, SkillshotType.SkillshotLine);
 
             SpellList.Add(Q);
@@ -177,6 +177,12 @@ namespace Olafisback
             if (target.IsValidTarget() && Config.Item("UseQCombo").GetValue<bool>() && Q.IsReady() && Player.Distance(target.ServerPosition) <= Q.Range)
             {
                 PredictionOutput Qpredict = Q.GetPrediction(target);
+                var hithere = Qpredict.CastPosition.Extend(ObjectManager.Player.Position, -100);
+                if (Player.Distance(target.ServerPosition) >= 350) 
+                {
+                Q.Cast(hithere);
+                }
+                else
                 Q.Cast(Qpredict.CastPosition);
             }
             
@@ -220,15 +226,19 @@ namespace Olafisback
                     Player.Mana / Player.MaxMana * 100 > Config.Item("Minman").GetValue<Slider>().Value && Player.Distance(target.ServerPosition) <= Q.Range)
             {
                 PredictionOutput Qpredict = Q.GetPrediction(target);
+                var hithere = Qpredict.CastPosition.Extend(ObjectManager.Player.Position, -140);
                 if (Qpredict.Hitchance >= HitChance.High)
-                    Q.Cast(Qpredict.CastPosition);
+
+                    Q.Cast(hithere);
             }
             if (target.IsValidTarget() && Q.IsReady() && Config.Item("UseQ2Harass").GetValue<bool>() &&
                     Player.Mana / Player.MaxMana * 100 > Config.Item("Minman").GetValue<Slider>().Value && Player.Distance(target.ServerPosition) <= Q2.Range)
             {
                 PredictionOutput Q2predict = Q2.GetPrediction(target);
+                var hithere = Q2predict.CastPosition.Extend(ObjectManager.Player.Position, -140);
                 if (Q2predict.Hitchance >= HitChance.High)
-                    Q2.Cast(Q2predict.CastPosition);
+
+                    Q2.Cast(hithere);
             }
             if (E.IsReady() && Config.Item("UseEHarass").GetValue<bool>() && Player.Distance(target.ServerPosition) <= E.Range)
                 E.CastOnUnit(target);

@@ -427,6 +427,9 @@ namespace Zed
             if (target != null && ShadowStage == ShadowCastStage.First &&  UltStage == UltCastStage.Second)
             {
                 UseItemes(target);
+                
+                if (LastCastedSpell.LastCastPacketSent.Slot != SpellSlot.W)
+                {
               
                     var m = (double)((linepos.Y - target.ServerPosition.Y) / (linepos.X - target.ServerPosition.X));
                     var angle = (double)Math.Atan(m);
@@ -455,7 +458,7 @@ namespace Zed
                         _player.Spellbook.CastSpell(_igniteSlot, target);
                     }
                 
-
+                }
             }
 
             if (target != null && WShadow != null && UltStage == UltCastStage.Second && target.Distance(_player.Position) > 250 && (target.Distance(WShadow.ServerPosition) < target.Distance(_player.Position)))
